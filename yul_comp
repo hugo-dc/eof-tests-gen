@@ -1,0 +1,26 @@
+#!/bin/bash
+
+fname=$(date +"%Y%m%d%H%M%s")
+format="bin"
+tmpfile=1
+
+if [ -f "$1" ]; then
+  fname=$1
+  tmpfile=0
+else
+  echo $1 > $fname
+fi
+
+if [ ! -z "$2" ]; then
+  format=$2
+fi
+
+solc --$format --assemble $fname | grep -i "^[0-9]"
+
+result=$?
+
+if [ "$tmpfile" -eq "1" ]; then
+  rm $fname
+fi
+
+exit $?
