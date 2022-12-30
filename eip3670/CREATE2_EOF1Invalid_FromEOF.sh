@@ -1,9 +1,8 @@
-#!/bin/bash
-
-FNAME="CREATE2_EOF1Invalid.yml"
+FNAME="CREATE2_EOF1Invalid_FromEOF.yml"
 FPATH=$HOME/$FNAME
 
 SP="     "
+f0="$FPATH.tmp0"
 f1="$FPATH.tmp1"
 f2="$FPATH.tmp2"
 f3="$FPATH.tmp3"
@@ -13,6 +12,13 @@ echo "$SP# Valid legacy initcode returning invalid EOF code - Truncated PUSH dat
 echo "$SP# Valid legacy initcode returning invalid EOF code - Containing undefined instruction (0xf6) after STOP" > $f2
 echo "$SP# Valid EOF initcode returning invalid EOF code - Truncated PUSH data at the end" > $f3
 echo "$SP# Valid EOF initcode returning invalid EOF code - Containing undefined instruction (0xf6 after STOP" > $f4
+
+contract_yul="{ calldatacopy(0, 0, calldatasize()) sstore(0, create2(0, 0, calldatasize(), 0)) sstore(1, 1) }"
+contract_evm=$(yul_comp "$contract_yul")
+contract_eof=$(eof_gen c:$contract_evm | tail -n1)
+
+echo "$SP # code: ':yul $contract_yul'"   > $f0
+echo "${SP} code: ':raw 0x$contract_eof'" >> $f0
 
 yul_start="sstore(1, 1) sstore(2, 2)"
 
@@ -73,7 +79,11 @@ echo "$SP# Init code: $yul_initcode" >> $f4
 echo "$SP# Code: $invalid_yul" >> $f4
 echo "$SP- ':raw 0x$eof_initcode'" >> $f4
 
-cat $f1 >  $FPATH
+
+cat $f0 > $FPATH
+
+echo "" >> $FPATH
+cat $f1 >> $FPATH
 
 echo "" >> $FPATH
 cat $f2 >> $FPATH
