@@ -1,18 +1,21 @@
 #!/bin/bash
 source ./common.sh
 
-FNAME="CREATE2_EOF1DeployValidOpcodesFiller.yml"
+FNAME="CreateTransactionEOF1ValidOpcodesFiller.yml"
 FPATH=$HOME/$FNAME
-CREATE2_ADDRESS="b94f5374fce5edbc8e2a8697c15331677e6ebf0b"
 
 f1="$FPATH.tmp1"
 f2="$FPATH.tmp2"
 
 rm $f1 $f2
 
+echo "$SP# Deployed EOF code: PUSH1(0) DUP1(n times) <opcode> [STOP if opcode is not terminating]" > $f1
+echo "$SP# Initcode: { mstore(0, 0x<eof_code>00..) return(0, <eof_codelen>) }" >> $f1
+
 for op in ${VALID_OPCODES[@]}; do
   stack_req=$(opinfo 0x$op --inputs)
   op_name=$(opinfo 0x$op --name)
+  op_name_lower=$(echo $op_name | tr '[:upper:]' '[:lower:]')
 
   asm_code=""
   if [ "$stack_req" -ge "1" ]; then
@@ -35,7 +38,7 @@ for op in ${VALID_OPCODES[@]}; do
       fi
     fi
   fi
-
+  
   is_terminating=$(opinfo 0x$op --is-terminating)
   if [ "$is_terminating" == "false" ]; then
     asm_code="$asm_code STOP"
@@ -45,28 +48,21 @@ for op in ${VALID_OPCODES[@]}; do
   eof=$(eof_gen c:$evm | tail -n1)
   yul_initcode=$(yulreturn $eof)
   evm_initcode=$(yul_comp "$yul_initcode")
-  create2_address=$(create_address2 $CREATE2_ADDRESS "" $evm_initcode)
 
-  op_name_lower=$(echo $op_name | tr '[:upper:]' '[:lower:]')
-
-  echo "$SP# Deployed EOF Code: $asm_code " >> $f1
-  echo "$SP- ':label $op_name_lower :raw 0x$evm_initcode'" >> $f1
+  echo "$SP- ':label ${op}_$op_name_lower :raw 0x$evm_initcode'" >> $f1
 
   echo "$SP- indexes:" >> $f2
-  echo "$SP    data: ':label $op_name_lower'" >> $f2
+  echo "$SP    data: ':label ${op}_$op_name_lower'" >> $f2
   echo "$SP  network:" >> $f2
   echo "$SP    - 'Shanghai'" >> $f2
   echo "$SP  result:" >> $f2
   echo "$SP   a94f5374fce5edbc8e2a8697c15331677e6ebf0b:" >> $f2 
   echo "$SP      nonce: 1" >> $f2
-  echo "$SP   b94f5374fce5edbc8e2a8697c15331677e6ebf0b:" >> $f2
-  echo "$SP      nonce: 1" >> $f2
-  echo "$SP      storage:" >> $f2
-  echo "$SP        1: 1" >> $f2
-  echo "$SP   ${create2_address:2}:" >> $f2
+  echo "$SP   6295ee1b4f6dd65047762f924ecd367c17eabf8f:" >> $f2
   echo "$SP      nonce: 1" >> $f2
   echo "$SP      storage: {}" >> $f2
   echo "$SP      code: '0x$eof'" >> $f2
+
 done
 
 FILLER_PATH="$TESTS_PATH/src/GeneralStateTestsFiller/$TESTS_SUITE/$FNAME"

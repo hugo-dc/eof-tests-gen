@@ -1,6 +1,7 @@
 #!/bin/bash
+source ./common.sh
 
-FNAME="CREATE_EOF1DeployValidOpcodes.yml"
+FNAME="CREATE_EOF1DeployValidOpcodesFiller.yml"
 FPATH=$HOME/$FNAME
 
 f1="$FPATH.tmp1"
@@ -8,18 +9,7 @@ f2="$FPATH.tmp2"
 
 rm $f1 $f2
 
-SP="     "
-
-valid_opcodes=("00" "01" "02" "03" "04" "05" "06" "07" "08" "09" "0a" "0b" "10" 
-               "11" "12" "13" "14" "15" "16" "17" "18" "19" "1a" "1b" "1c" "1d" 
-               "20" "30" "31" "32" "33" "34" "35" "36" "37" "38" "39" "3a" "3b" 
-               "3c" "3d" "3e" "3f" "40" "41" "42" "43" "44" "45" "46" "47" "48" 
-               "50" "51" "53" "54" "55" "59" "5a" "5b" "80" "81" "82" "83" "84" 
-               "85" "86" "87" "88" "89" "8a" "8b" "8c" "8d" "8e" "8f" "90" "91" 
-               "92" "93" "94" "95" "96" "97" "98" "99" "9a" "9b" "9c" "9d" "9e" 
-               "9f" "a0" "a1" "a2" "a3" "a4" "f0" "f1" "f3" "f4" "f5" "fa" "fd" 
-               "fe" )
-for op in ${valid_opcodes[@]}; do
+for op in ${VALID_OPCODES[@]}; do
   stack_req=$(opinfo 0x$op --inputs)
   op_name=$(opinfo 0x$op --name)
 
@@ -31,7 +21,22 @@ for op in ${valid_opcodes[@]}; do
       asm_code="PUSH1(1) $(python -c "print('DUP1 ' * ($stack_req - 1))") $op_name"
     fi
   else
+    is_push=$(opinfo 0x$op --ispush)
     asm_code="$op_name"
+
+    if [ "$is_push" == "true" ]; then
+      pushlen=$(opinfo 0x$op --immediates)
+      if [ "$pushlen" -eq "1" ]; then
+        asm_code="$op_name(1)" 
+      else
+        asm_code="$op_name(0x"
+        asm_code="$asm_code$(python -c "print('ff' * $pushlen)"))"
+      fi
+    fi
+  fi
+  is_terminating=$(opinfo 0x$op --is-terminating)
+  if [ "$is_terminating" == "false" ]; then
+    asm_code="$asm_code STOP"
   fi
 
   evm=$(mnem2evm "$asm_code")
@@ -61,7 +66,25 @@ for op in ${valid_opcodes[@]}; do
   echo "$SP      code: '0x$eof'" >> $f2
 done
 
-cat $f1 > $FPATH
-cat $f2 >> $FPATH
+FILLER_PATH="$TESTS_PATH/src/GeneralStateTestsFiller/$TESTS_SUITE/$FNAME"
 
-cat $FPATH
+cat $FILLER_PATH > $FPATH 
+cat $FILLER_PATH > $FPATH.bck #backup
+
+f1_start=$(cat $FILLER_PATH | grep -n ">@f1" | cut -d ":" -f1)
+f1_end=$(cat $FILLER_PATH | grep -n "<@f1" | cut -d ":" -f1)
+
+f2_start=$(cat $FILLER_PATH | grep -n ">@f2" | cut -d ":" -f1)
+f2_end=$(cat $FILLER_PATH | grep -n "<@f2" | cut -d ":" -f1)
+
+flines=$(wc -l $FILLER_PATH | cut -d " " -f1)
+
+cat $FILLER_PATH | head -n$f1_start > $FPATH
+cat $f1  >> $FPATH
+cat $FILLER_PATH | tail -n$(( $flines - $f1_end + 1 )) | head -n$(( $f2_start - $f1_end + 1 )) >> $FPATH
+cat $f2  >> $FPATH
+cat $FILLER_PATH | tail -n$(( $flines - $f2_end + 1 )) >> $FPATH
+
+cat $FPATH > $FILLER_PATH
+echo $FILLER_PATH done
+
