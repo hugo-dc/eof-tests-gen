@@ -1,5 +1,5 @@
 #!/bin/bash
-source ./common.sh
+source ../common.sh
 
 FNAME="CreateTransactionEOF1InvalidOpcodesFiller.yml"
 FPATH=$HOME/$FNAME

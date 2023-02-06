@@ -3,6 +3,7 @@ TESTS_PATH="/home/hugo/workspace/tests/"
 TESTS_SUITE="EIPTests/stEOF/stEIP3670"
 
 SP="     "
+SP6="      "
 VALID_OPCODES=("00" "01" "02" "03" "04" "05" "06" "07" "08" "09" "0a" "0b" "10" 
                "11" "12" "13" "14" "15" "16" "17" "18" "19" "1a" "1b" "1c" "1d" 
                "20" "30" "31" "32" "33" "34" "35" "36" "37" "38" "39" "3a" "3b" 
@@ -26,3 +27,60 @@ INVALID_OPCODES=( "0c" "0d" "0e" "0f" "1e" "1f" "21" "22" "23" "24" "25" "26"
                   "e7" "e8" "e9" "ea" "eb" "ec" "ed" "ee" "ef" "f2" "f6" "f7"
                   "f8" "f9" "fb" "fc" "ff" )
 
+function init_variables() {
+  clean=0
+  if [ "$1" == "clean" ]; then
+    clean=1
+  fi
+
+  FPATH=$HOME/$FNAME
+
+  f1="$FPATH.tmp1"
+  f2="$FPATH.tmp2"
+  f3="$FPATH.tmp3"
+  rm $FPATH $f1 $f2 $f3 2> /dev/null
+}
+
+function update_filler() {
+  echo "update_filler"
+  inc_a=0
+  inc_b=1
+
+  if [[ "$clean" -eq 1 ]]; then
+    inc_a=1
+    inc_b=0
+  fi  
+  FILLER_PATH="$TESTS_PATH/src/GeneralStateTestsFiller/$TESTS_SUITE/$FNAME"
+
+  cat $FILLER_PATH > $FPATH.bck
+
+  flines=$(wc -l $FILLER_PATH | cut -d " " -f1)
+  prev=0
+  i=1
+  while true; do
+    f_start=$(cat $FILLER_PATH | grep -n ">@f$i" | cut -d ":" -f1)
+    f_end=$(cat $FILLER_PATH | grep -n "<@f$i" | cut -d ":" -f1)
+
+    echo $f_start
+    echo $f_end
+
+    if [[ -z "$f_start" || -z "$f_end" ]]; then
+      echo "Stopped looking for f$i"
+      cat $FILLER_PATH | tail -n$(( $flines - $prev + $inc_b )) >> $FPATH
+      break
+    fi
+
+    cat $FILLER_PATH | head -n$(( $f_start - $inc_a )) | tail -n$(( $f_start - $prev - $inc_a )) >> $FPATH
+    prev=$f_end
+    fn="f$i"
+    cat ${!fn} >> $FPATH
+
+    if [ "$i" -eq 10 ] ; then
+      break
+    fi
+    i=$(( $i + 1 ))
+  done
+
+  cat $FPATH > $FILLER_PATH
+  echo $FILLER_PATH done
+}

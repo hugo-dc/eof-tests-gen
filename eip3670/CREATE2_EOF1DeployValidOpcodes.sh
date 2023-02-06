@@ -1,5 +1,5 @@
 #!/bin/bash
-source ./common.sh
+source ../common.sh
 
 FNAME="CREATE2_EOF1DeployValidOpcodesFiller.yml"
 FPATH=$HOME/$FNAME

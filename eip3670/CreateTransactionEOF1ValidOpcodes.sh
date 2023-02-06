@@ -1,12 +1,11 @@
 #!/bin/bash
-source ./common.sh
+source ../common.sh
 
 FNAME="CreateTransactionEOF1ValidOpcodesFiller.yml"
 FPATH=$HOME/$FNAME
 
 f1="$FPATH.tmp1"
 f2="$FPATH.tmp2"
-
 rm $f1 $f2
 
 echo "$SP# Deployed EOF code: PUSH1(0) DUP1(n times) <opcode> [STOP if opcode is not terminating]" > $f1
