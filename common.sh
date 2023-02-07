@@ -61,8 +61,7 @@ function update_filler() {
     f_start=$(cat $FILLER_PATH | grep -n ">@f$i" | cut -d ":" -f1)
     f_end=$(cat $FILLER_PATH | grep -n "<@f$i" | cut -d ":" -f1)
 
-    echo $f_start
-    echo $f_end
+    echo "f$i [$f_start : $f_end]"
 
     if [[ -z "$f_start" || -z "$f_end" ]]; then
       echo "Stopped looking for f$i"
@@ -70,7 +69,7 @@ function update_filler() {
       break
     fi
 
-    cat $FILLER_PATH | head -n$(( $f_start - $inc_a )) | tail -n$(( $f_start - $prev - $inc_a )) >> $FPATH
+    cat $FILLER_PATH | head -n$(( $f_start - $inc_a )) | tail -n$(( $f_start - $prev - $inc_a + 1 )) >> $FPATH
     prev=$f_end
     fn="f$i"
     cat ${!fn} >> $FPATH
