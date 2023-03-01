@@ -2,8 +2,11 @@
 TESTS_PATH="/home/hugo/workspace/tests/"
 TESTS_SUITE="EIPTests/stEOF/stEIP3670"
 
-SP="     "
+SP4="    "
+SP5="     "
 SP6="      "
+SP=$SP5
+
 VALID_OPCODES=("00" "01" "02" "03" "04" "05" "06" "07" "08" "09" "0a" "0b" "10" 
                "11" "12" "13" "14" "15" "16" "17" "18" "19" "1a" "1b" "1c" "1d" 
                "20" "30" "31" "32" "33" "34" "35" "36" "37" "38" "39" "3a" "3b" 
@@ -50,7 +53,12 @@ function update_filler() {
     inc_a=1
     inc_b=0
   fi  
-  FILLER_PATH="$TESTS_PATH/src/GeneralStateTestsFiller/$TESTS_SUITE/$FNAME"
+
+  if [ "$1" == "valid_invalid" ]; then
+    FILLER_PATH="$TESTS_PATH/src/$TESTS_SUITE_VI/$FNAME"
+  else
+    FILLER_PATH="$TESTS_PATH/src/GeneralStateTestsFiller/$TESTS_SUITE/$FNAME"
+  fi
 
   cat $FILLER_PATH > $FPATH.bck
 

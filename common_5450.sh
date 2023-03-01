@@ -1,0 +1,4 @@
+#!/bin/bash
+
+TESTS_SUITE="EIPTests/stEOF/stEIP5450"
+TESTS_SUITE_VI="EOFTestsFiller/EIP5450"
